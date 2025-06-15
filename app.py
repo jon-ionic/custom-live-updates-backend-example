@@ -4,7 +4,7 @@ import uuid
 
 app = Flask(__name__)
 
-BASE_URL = "http://localhost:5000"
+BASE_URL = "http://localhost:8000"
 
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///app.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
