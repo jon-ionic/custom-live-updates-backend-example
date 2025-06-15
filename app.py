@@ -1,6 +1,5 @@
 from flask import Flask, request, jsonify, redirect
 from models import db, App, Build, Deployment
-import os
 import uuid
 
 app = Flask(__name__)
@@ -162,9 +161,11 @@ def check_device(app_id):
     if not App.query.get(app_id):
         return jsonify({"error": "App not found"}), 404
 
-    deployment = Deployment.query.filter_by(
-        app_id=app_id, channel_name=data["channel_name"]
-    ).order_by(Deployment.id.desc()).first()
+    deployment = (
+        Deployment.query.filter_by(app_id=app_id, channel_name=data["channel_name"])
+        .order_by(Deployment.id.desc())
+        .first()
+    )
     if not deployment:
         return jsonify({"error": "Deployment not found"}), 404
 
@@ -195,11 +196,59 @@ def manifest_check(app_id, snapshot_id):
         return jsonify({"error": "App not found"}), 404
 
     build = Build.query.filter_by(snapshot_id=snapshot_id).first()
-
     if not build:
         return jsonify({"error": "Build not found"}), 404
 
     return redirect(build.artifact_url)
+
+
+@app.route("/apps", methods=["GET"])
+def get_apps():
+    apps = App.query.all()
+    return jsonify([{"id": app.id, "name": app.name} for app in apps])
+
+
+@app.route("/apps/<app_id>/builds", methods=["GET"])
+def get_builds(app_id):
+    if not App.query.get(app_id):
+        return jsonify({"error": "App not found"}), 404
+
+    builds = Build.query.filter_by(app_id=app_id).order_by(Build.id.desc()).all()
+    return jsonify(
+        [
+            {
+                "id": build.id,
+                "app_id": build.app_id,
+                "artifact_url": build.artifact_url,
+                "artifact_type": build.artifact_type,
+                "snapshot_id": build.snapshot_id,
+                "commit_sha": build.commit_sha,
+                "commit_message": build.commit_message,
+                "commit_ref": build.commit_ref,
+            }
+            for build in builds
+        ]
+    )
+
+
+@app.route("/apps/<app_id>/deployments", methods=["GET"])
+def get_deployments(app_id):
+    if not App.query.get(app_id):
+        return jsonify({"error": "App not found"}), 404
+
+    deployments = Deployment.query.filter_by(app_id=app_id).order_by(Deployment.id.desc()).all()
+    return jsonify(
+        [
+            {
+                "id": deployment.id,
+                "app_id": deployment.app_id,
+                "build_id": deployment.build_id,
+                "channel_name": deployment.channel_name,
+                "created_at": deployment.created_at.isoformat(),
+            }
+            for deployment in deployments
+        ]
+    )
 
 
 if __name__ == "__main__":
