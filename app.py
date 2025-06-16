@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
-BASE_URL = "http://localhost:8000"
+BASE_URL = "https://renewed-hen-broadly.ngrok-free.app"
 
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///app.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -329,6 +329,11 @@ def check_device(app_id: str):
                 ),
                 "build": build.id if update_available else None,
                 "incompatibleUpdateAvailable": False,
+            },
+            "meta": {
+                "status": 200,
+                "version": "2.0.0-sdlc-beta.0",
+                "request_id": uuid.uuid4()
             }
         }
     )

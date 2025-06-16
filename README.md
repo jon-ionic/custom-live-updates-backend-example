@@ -121,8 +121,6 @@ Connection: close
 Content-Type: text/html; charset=utf-8
 Content-Length: 305
 Location: https://my-storage-provider.local/live-update-manifest.json
-
-https://my-storage-provider.local/live-update-manifest.json
 ```
 
 
