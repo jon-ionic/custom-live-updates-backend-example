@@ -104,6 +104,11 @@ The endpoint should return a response like the following:
         "partial": false,
         "snapshot": "fdc7c806-ccfa-4c95-a9e3-d8fd44d08076",
         "url": "http://localhost:8000/apps/abcd1234/snapshots/fdc7c806-ccfa-4c95-a9e3-d8fd44d08076/manifest_v2"
+    },
+    "meta": {
+        "status": 200,
+        "version": "2.0.0-sdlc-beta.0",
+        "request_id": "0ea4c1fb-a8c6-4a38-a206-4abc7f0d3a02"
     }
 }
 ```
