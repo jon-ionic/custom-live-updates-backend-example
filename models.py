@@ -21,7 +21,7 @@ class Build(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     app_id = db.Column(db.String(36), db.ForeignKey("apps.id"), nullable=False)
     artifact_url = db.Column(db.String(1024), nullable=False)
-    artifact_type = db.Column(db.String(20), nullable=False)  # 'differential' or 'zip'
+    artifact_type = db.Column(db.String(20), nullable=False)
     snapshot_id = db.Column(db.String(255), nullable=False)
     commit_sha = db.Column(db.String(40), nullable=False)
     commit_message = db.Column(db.Text, nullable=False)

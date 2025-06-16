@@ -217,33 +217,32 @@ def check_device(app_id):
     """
     This is the first endpoint that the SDK will call.
 
-    The SDK will automatically provide data like the following when "sync" is called:
+    The SDK will automatically provide data when "sync" is called:
     {
         "device": {
-            "binary_version": "1.0",   // Native version number of your app
-            "device_id": "c70cb362-38f3-4e74-9792-139efe84b017",   // UUID uniquely identifying the device
-            "platform": "android" | "ios",   // Native platform of the device
-            "platform_version": "35",   // Android API level or iOS major version
-            "snapshot": "e80c799e-b785-4fa2-b799-25bd3682b102",   // Currently active snapshot ID; will be null if none
-            "build": "9492176"   // Currently active build ID; will be null if none
+            "binary_version": "1.0",           // Native version number of your app
+            "device_id": "c70cb362-38f3-4e74-9792-139efe84b017",  // UUID uniquely identifying the device
+            "platform": "android" | "ios",     // Native platform of the device
+            "platform_version": "35",          // Android API level or iOS major version
+            "snapshot": "e80c799e-b785-4fa2-b799-25bd3682b102",   // Currently active snapshot ID; null if none
+            "build": "9492176"                 // Currently active build ID; null if none
         },
-        "app_id": "abcd1234",   // App ID corresponding to the app
-        "channel_name": "Production",   // Channel name, often designated by environment (production, development, etc.)
-        "is_portals": true | false,   // False if using @capacitor/live-updates, true if using Portals
-        "plugin_version": "6",   // Always "6"
-        "manifest": true | false   // True if manifest file is bundled within the native app or an update has already been downloaded; false if not
+        "app_id": "abcd1234",                  // App ID corresponding to the app
+        "channel_name": "Production",          // Channel name (production, development, etc.)
+        "is_portals": true | false,            // False if using @capacitor/live-updates, true if using Portals
+        "plugin_version": "6",                 // Always "6"
+        "manifest": true | false               // True if manifest file is bundled or update downloaded; false if not
     }
 
-    The check-device endpoint must return data such as the following:
+    The check-device endpoint must return:
     {
         "data": {
-            "available": true,   // False if request's device.build matches the available update's build ID or if there is no update
-            "compatible": true,   // False if request's device.build matches the available update's build ID or if there is no update
-            "partial": false,  // Not relevant to differential live updates; keep false
-            "snapshot": "e5583cc3-038e-44ca-a3ae-dfe0620b3610",   // Snapshot ID uniquely identifying the new update; null if none
-            "url": "{BASE_URL}/apps/{APP_ID}/snapshots/e5583cc3-038e-44ca-a3ae-dfe0620b3610/manifest_v2",  // URL of the manifest_v2 endpoint, interpolated with
-                // the app ID and the snapshot ID uniquely identifying the bundle to be downloaded; null if none
-            "build": 10131410,  // New bundle's build ID; null if none
+            "available": true,                 // False if device.build matches update's build ID or no update
+            "compatible": true,                // False if device.build matches update's build ID or no update
+            "partial": false,                  // Not relevant to differential live updates; keep false
+            "snapshot": "e5583cc3-038e-44ca-a3ae-dfe0620b3610",  // Snapshot ID for new update; null if none
+            "url": "{BASE_URL}/apps/abcd1234/snapshots/{SNAPSHOT_ID}/manifest_v2",  // URL for manifest_v2 endpoint
+            "build": 10131410,                 // New bundle's build ID; null if none
             "incompatibleUpdateAvailable": false  // Not relevant in current implementation; keep false
         }
     }
@@ -300,12 +299,15 @@ def manifest_check(app_id, snapshot_id):
     """
     This is the second endpoint that the SDK will call.
 
-    The manifest_v2 endpoint will be the URL provided by the check-device endpoint in the data.url field, if an update is available.
+    The manifest_v2 endpoint will be the URL provided by the check-device endpoint
+    in the data.url field, if an update is available.
 
-    The plugin will send a GET request to this endpoint to download the manifest_v2 file. The endpoint must redirect to the artifact_url of the build,
-    which should be a live-update-manifest.json file.
+    The plugin will send a GET request to this endpoint to download the manifest_v2
+    file. The endpoint must redirect to the artifact_url of the build, which should be a
+    live-update-manifest.json file.
 
-    The plugin will walk through the files in the live-update-manifest.json and download the necessary items.
+    The plugin will walk through the files in the live-update-manifest.json and
+    download the necessary items.
     """
     if not App.query.get(app_id):
         return jsonify({"error": "App not found"}), 404
