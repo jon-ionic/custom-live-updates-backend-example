@@ -128,4 +128,54 @@ Content-Length: 305
 Location: https://my-storage-provider.local/live-update-manifest.json
 ```
 
+## Plugin Configuration
 
+By default, the Live Updates SDK will use Appflow's check-device endpoint, but this is re-configurable through the use of a URL token.
+
+The Ionic/Outsystems team will provide you a URL token, which is a signed combination of your app bundle ID(s) and your base URL.
+
+If you are using a Capacitor app, this can be provided in the `capacitor.config.ts|js|json` config:
+```typescript
+import { CapacitorConfig } from '@capacitor/cli';
+
+const config: CapacitorConfig = {
+  ...  
+  plugins: {
+    LiveUpdates: {
+      ...
+      urlToken: 'YOUR URL TOKEN HERE'
+    },
+  }
+};
+
+export default config;
+```
+
+If you are using Portals, this is set using the native SDKs.
+
+## Differentials
+
+This implementation only supports differential live updates. This assumes:
+- The live update bundle uploaded to a storage provided **unzipped**, such that each file can be accessed independently over HTTP/S.
+- A live-update-manifest.json file is generated using the [Appflow CLI](https://ionic.io/docs/appflow/cli/reference/appflow_live-update_generate-manifest) and stored at the root of the web bundle.
+- The `artifact_url` is the URL to the `live-update-manifest.json` file.
+
+The SDK must be configured to use differential updates. In a Capacitor app, this is configured in the `capacitor.config.[js|ts|json]`:
+
+```typescript
+import { CapacitorConfig } from '@capacitor/cli';
+
+const config: CapacitorConfig = {
+  ...  
+  plugins: {
+    LiveUpdates: {
+      ...
+      strategy: 'differential',
+    },
+  }
+};
+
+export default config;
+```
+
+With Portals, this is set when instantiating the live update ([Android](https://ionic.io/docs/live-updates-sdk-android/live-updates/io.ionic.liveupdates/-live-update/index.html), [iOS](https://live-updates-sdk-ios.vercel.app/documentation/ionicliveupdates/liveupdate)).
