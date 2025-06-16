@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify, redirect
 from models import db, App, Build, Deployment
+import os
 import uuid
 import logging
 from typing import Tuple, Any, Dict, Optional
@@ -9,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
-BASE_URL = "https://renewed-hen-broadly.ngrok-free.app"
+BASE_URL = os.getenv("LIVE_UPDATES_BASE_URL", "http://localhost:8000")
 
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///app.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False

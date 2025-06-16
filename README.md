@@ -14,6 +14,9 @@ source bin/activate
 # Install the project dependencies
 pip3 install -r requirements.txt
 
+# (Optional) Set base URL (default "http://localhost:8000")
+export LIVE_UPDATES_BASE_URL="https://your.base.url"
+
 # Run the application
 python3 -m gunicorn -w 4 -b 0.0.0.0:3000 app:app
 ```
