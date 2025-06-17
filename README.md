@@ -133,6 +133,8 @@ Location: https://my-storage-provider.local/live-update-manifest.json
 
 ## Plugin Configuration
 
+### URL Token
+
 By default, the Live Updates SDK will use Appflow's check-device endpoint, but this is re-configurable through the use of a URL token.
 
 The Ionic/Outsystems team will provide you a URL token, which is a signed combination of your app bundle ID(s) and your base URL.
@@ -156,7 +158,7 @@ export default config;
 
 If you are using Portals, this is set using the native SDKs.
 
-## Differentials
+### Differential Updates
 
 This implementation only supports differential live updates. This assumes:
 - The live update bundle uploaded to a storage provided **unzipped**, such that each file can be accessed independently over HTTP/S.
