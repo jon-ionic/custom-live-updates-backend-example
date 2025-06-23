@@ -37,7 +37,9 @@ curl --location 'http://localhost:8000/apps'
 
 ### Create a build
 
-Create a build using the /builds endpoint.
+Create a build using the /builds endpoint. 
+
+The `artifact_url` must be a `live-update-manifest.json` file [generated using the Appflow CLI](https://ionic.io/docs/appflow/cli/reference/appflow_live-update_generate-manifest).
 ```bash
 curl --location 'http://localhost:8000/apps/abcd1234/builds' \
   --header 'Content-Type: application/json' \
@@ -57,7 +59,7 @@ curl --location 'http://localhost:8000/apps/abcd1234/builds'
 
 ### Create a deployment
 
-Deploy the created build using the /deployments endpoint.
+Deploy the created build using the /deployments endpoint. The `build_id` is the id returned from the /builds endpoint.
 
 ```bash
 curl --location 'http://localhost:8000/apps/abcd1234/deployments' \
@@ -118,7 +120,7 @@ The endpoint should return a response like the following:
 
 If `data.available` is true, the plugin will send a GET request to the `data.url`, which is the app's `manifest_v2` endpoint.
 
-The `manifest_v2` endpoint should redirect to the snapshot/build's artifact URL.
+The `manifest_v2` endpoint should redirect to the snapshot/build's artifact URL. With a differential update, this is the `live-update-manifest.json` file. The plugin will walk through the manifest and download the necessary files from the location relative to the `live-update-manifest.json`.
 ```bash
 curl -s -L -D - 'http://localhost:8000/apps/abcd1234/snapshots/fdc7c806-ccfa-4c95-a9e3-d8fd44d08076/manifest_v2' -o /dev/null -w '%{url_effective}'
 
