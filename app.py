@@ -22,7 +22,7 @@ with app.app_context():
 
 def validate_required_fields(
     data: Dict[str, Any], required_fields: list[str]
-) -> Tuple[bool, Optional[Any], Optional[int]]:
+) -> Tuple[bool, Optional[str], Optional[int]]:
     if not data or not all(field in data for field in required_fields):
         return (
             False,
@@ -129,11 +129,16 @@ def create_build(app_id: str):
     if not validated:
         return response, error_code
 
-    if data["artifact_type"] != "differential":
-        return jsonify({"error": 'artifact_type must be "differential"'}), 400
+    artifact_type, artifact_url = data["artifact_type"], data["artifact_url"]
 
-    if not data["artifact_url"].endswith("live-update-manifest.json"):
+    if artifact_type not in ["differential", "zip"]:
+        return jsonify({"error": 'artifact_type must be "differential" or "zip"'}), 400
+
+    if artifact_type == "differential" and not artifact_url.endswith("live-update-manifest.json"):
         return jsonify({"error": "artifact_url must be a live-update-manifest.json file"}), 400
+
+    if artifact_type == "zip" and not artifact_url.endswith(".zip"):
+        return jsonify({"error": "artifact_url must be a .zip file"}), 400
 
     if not App.query.get(app_id):
         return jsonify({"error": "App not found"}), 404
@@ -184,7 +189,9 @@ def get_all_deployments(app_id: str):
     if not App.query.get(app_id):
         return jsonify({"error": "App not found"}), 404
 
-    deployments = Deployment.query.filter_by(app_id=app_id).order_by(Deployment.id.desc()).all()
+    deployments = (
+        Deployment.query.filter_by(app_id=app_id).join(Build).order_by(Deployment.id.desc()).all()
+    )
     return jsonify(
         [
             {
@@ -193,6 +200,12 @@ def get_all_deployments(app_id: str):
                 "build_id": deployment.build_id,
                 "channel_name": deployment.channel_name,
                 "created_at": deployment.created_at.isoformat(),
+                "artifact_type": deployment.build.artifact_type,
+                "artifact_url": deployment.build.artifact_url,
+                "snapshot_id": deployment.build.snapshot_id,
+                "commit_sha": deployment.build.commit_sha,
+                "commit_message": deployment.build.commit_message,
+                "commit_ref": deployment.build.commit_ref,
             }
             for deployment in deployments
         ]
@@ -272,7 +285,7 @@ def check_device(app_id: str):
         "channel_name": "Production",          // Channel name (production, development, etc.)
         "is_portals": true | false,            // False if using @capacitor/live-updates, true if using Portals
         "plugin_version": "6",                 // Always "6"
-        "manifest": true | false               // True if manifest file is bundled or update downloaded; false if not
+        "manifest": true | false               // True if differential updates, false if zip updates
     }
 
     The check-device endpoint must return something like:
@@ -282,7 +295,7 @@ def check_device(app_id: str):
             "compatible": true,                // False if device.build matches update's build ID or no update
             "partial": false,                  // Not relevant to differential live updates; keep false
             "snapshot": "e5583cc3-038e-44ca-a3ae-dfe0620b3610",  // Snapshot ID for new update; null if none
-            "url": "{BASE_URL}/apps/abcd1234/snapshots/{SNAPSHOT_ID}/manifest_v2",  // URL for manifest_v2 endpoint
+            "url": "{BASE_URL}/apps/abcd1234/snapshots/{SNAPSHOT_ID}/manifest_v2",  // manifest_v2 or download endpoint
             "build": 10131410,                 // New bundle's build ID; null if none
             "incompatibleUpdateAvailable": false  // Not relevant in current implementation; keep false
         },
@@ -307,6 +320,8 @@ def check_device(app_id: str):
     if not App.query.get(app_id):
         return jsonify({"error": "App not found"}), 404
 
+    artifact_type = "differential" if data["manifest"] is True else "zip"
+
     deployment = (
         Deployment.query.filter_by(app_id=app_id, channel_name=data["channel_name"])
         .order_by(Deployment.id.desc())
@@ -319,7 +334,18 @@ def check_device(app_id: str):
     if not build:
         return jsonify({"error": "Build not found"}), 404
 
+    if build.artifact_type != artifact_type:
+        return (
+            jsonify(
+                {
+                    "error": f"Build is a {build.artifact_type}, but the SDK is requesting a {artifact_type}"
+                }
+            ),
+            400,
+        )
+
     update_available = build.snapshot_id != existing_snapshot_id and build.id != existing_build_id
+    endpoint = "manifest_v2" if build.artifact_type == "differential" else "download"
 
     return jsonify(
         {
@@ -329,7 +355,7 @@ def check_device(app_id: str):
                 "partial": False,
                 "snapshot": build.snapshot_id if update_available else None,
                 "url": (
-                    f"{BASE_URL}/apps/{app_id}/snapshots/{build.snapshot_id}/manifest_v2"
+                    f"{BASE_URL}/apps/{app_id}/snapshots/{build.snapshot_id}/{endpoint}"
                     if update_available
                     else None
                 ),
@@ -344,7 +370,7 @@ def check_device(app_id: str):
 @app.route("/apps/<app_id>/snapshots/<snapshot_id>/manifest_v2", methods=["GET"])
 def manifest_check(app_id: str, snapshot_id: str):
     """
-    This is the second endpoint that the SDK will call.
+    This is the second endpoint that the SDK will call, if differential updates are used.
 
     The manifest_v2 endpoint will be the URL provided by the check-device endpoint
     in the data.url field, if an update is available.
@@ -355,6 +381,28 @@ def manifest_check(app_id: str, snapshot_id: str):
 
     The plugin will walk through the files in the live-update-manifest.json and
     download the necessary items.
+    """
+    if not App.query.get(app_id):
+        return jsonify({"error": "App not found"}), 404
+
+    build = Build.query.filter_by(snapshot_id=snapshot_id).first()
+    if not build:
+        return jsonify({"error": "Build not found"}), 404
+
+    return redirect(build.artifact_url)
+
+
+@app.route("/apps/<app_id>/snapshots/<snapshot_id>/download", methods=["GET"])
+def download(app_id: str, snapshot_id: str):
+    """
+    This is the second endpoint that the SDK will call, if zip updates are used.
+
+    The download endpoint will be the URL provided by the check-device endpoint
+    in the data.url field, if an update is available.
+
+    The plugin will send a GET request to this endpoint to download the zip.
+    The endpoint must redirect to the artifact_url of the build, which should be a
+    .zip file.
     """
     if not App.query.get(app_id):
         return jsonify({"error": "App not found"}), 404

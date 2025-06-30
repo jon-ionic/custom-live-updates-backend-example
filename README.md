@@ -39,13 +39,26 @@ curl --location 'http://localhost:8000/apps'
 
 Create a build using the /builds endpoint. 
 
-The `artifact_url` must be a `live-update-manifest.json` file [generated using the Appflow CLI](https://ionic.io/docs/appflow/cli/reference/appflow_live-update_generate-manifest).
+If using differential updates, the `artifact_url` must be a `live-update-manifest.json` file [generated using the Appflow CLI](https://ionic.io/docs/appflow/cli/reference/appflow_live-update_generate-manifest).
 ```bash
 curl --location 'http://localhost:8000/apps/abcd1234/builds' \
   --header 'Content-Type: application/json' \
   --data '{
       "artifact_url": "https://my-storage-provider.local/live-update-manifest.json",
       "artifact_type": "differential",
+      "commit_sha": "123456",
+      "commit_message": "initial build",
+      "commit_ref": "main"
+    }'
+```
+
+If using zip updates, the `artifact_url` must be a `.zip` file.
+```bash
+curl --location 'http://localhost:8000/apps/abcd1234/builds' \
+  --header 'Content-Type: application/json' \
+  --data '{
+      "artifact_url": "https://my-storage-provider.local/bundle.zip",
+      "artifact_type": "zip",
       "commit_sha": "123456",
       "commit_message": "initial build",
       "commit_ref": "main"
@@ -162,7 +175,7 @@ If you are using Portals, this is set using the native SDKs.
 
 ### Differential Updates
 
-This implementation only supports differential live updates. This assumes:
+This implementation supports differential live updates and zip live updates. Differential updates are recommended for better performance. This assumes:
 - The live update bundle uploaded to a storage provided **unzipped**, such that each file can be accessed independently over HTTP/S.
 - A live-update-manifest.json file is generated using the [Appflow CLI](https://ionic.io/docs/appflow/cli/reference/appflow_live-update_generate-manifest) and stored at the root of the web bundle.
 - The `artifact_url` is the URL to the `live-update-manifest.json` file.
