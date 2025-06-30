@@ -26,6 +26,7 @@ class Build(db.Model):
     commit_sha = db.Column(db.String(40), nullable=False)
     commit_message = db.Column(db.Text, nullable=False)
     commit_ref = db.Column(db.String(255), nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     deployments = db.relationship("Deployment", backref="build", lazy=True)
 

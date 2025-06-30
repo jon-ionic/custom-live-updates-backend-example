@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/ui/apps">Home</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{{ app.name }}</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">Builds for {{ app.name }} ({{ app.id }})</h2>
+    <a href="/ui/apps/{{ app.id }}/builds">
+        <button class="btn btn-success" >View All</button>
+    </a>
+</div>
+
+<table class="table table-bordered">
+    <thead><tr><th>ID</th><th>Artifact URL</th><th>Type</th><th>Commit SHA</th><th>Commit Message</th><th>Commit Ref</th></tr></thead>
+    <tbody>
+    {% for build in builds %}
+    <tr>
+        <td>{{ build.id }}</td>
+        <td><a href="{{ build.artifact_url }}" target="_blank">{{ build.artifact_url }}</a></td>
+        <td>{{ build.artifact_type }}</td>
+        <td>{{ build.commit_sha }}</td>
+        <td>{{ build.commit_message }}</td>
+        <td>{{ build.commit_ref }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">Deployments for {{ app.name }} ({{ app.id }})</h2>
+    <a href="/ui/apps/{{ app.id }}/deployments">
+        <button class="btn btn-success" >View All</button>
+    </a>
+</div>
+<table class="table table-bordered">
+    <thead><tr><th>ID</th><th>Build ID</th><th>Channel Name</th><th>Created At</th></tr></thead>
+    <tbody>
+    {% for deployment in deployments %}
+    <tr>
+        <td>{{ deployment.id }}</td>
+        <td>{{ deployment.build_id }}</td>
+        <td>{{ deployment.channel_name }}</td>
+        <td>{{ deployment.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %} 

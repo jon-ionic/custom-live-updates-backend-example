@@ -1,25 +1,31 @@
 {% extends 'base.html' %}
 {% block content %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/ui/apps">Home</a></li>
+      <li class="breadcrumb-item"><a href="/ui/apps/{{ app.id }}">{{ app.name }}</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Builds</li>
+  </ol>
+</nav>
+
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h2 class="mb-0">Deployments for App: {{ app.name }} ({{ app.id }})</h2>
     <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#newDeploymentModal">New Deployment</button>
 </div>
-<a href="/ui/apps" class="btn btn-link mb-3">Back to Apps</a>
 <table class="table table-bordered">
-    <thead><tr><th>ID</th><th>Build ID</th><th>Channel Name</th><th>Created At</th></tr></thead>
+    <thead><tr><th>Build ID</th><th>Commit SHA</th><th>Channel Name</th><th>Created At</th></tr></thead>
     <tbody>
     {% for deployment in deployments %}
     <tr>
-        <td>{{ deployment.id }}</td>
         <td>{{ deployment.build_id }}</td>
+        <td>{{ deployment.build.commit_sha }}</td>
         <td>{{ deployment.channel_name }}</td>
-        <td>{{ deployment.created_at }}</td>
+        <td>{{ deployment.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
     </tr>
     {% endfor %}
     </tbody>
 </table>
 
-<!-- New Deployment Modal -->
 <div class="modal fade" id="newDeploymentModal" tabindex="-1" aria-labelledby="newDeploymentModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
