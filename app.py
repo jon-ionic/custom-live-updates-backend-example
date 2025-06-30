@@ -22,7 +22,7 @@ with app.app_context():
 
 def validate_required_fields(
     data: Dict[str, Any], required_fields: list[str]
-) -> Tuple[bool, Optional[Any], Optional[int]]:
+) -> Tuple[bool, Optional[str], Optional[int]]:
     if not data or not all(field in data for field in required_fields):
         return (
             False,
@@ -189,7 +189,9 @@ def get_all_deployments(app_id: str):
     if not App.query.get(app_id):
         return jsonify({"error": "App not found"}), 404
 
-    deployments = Deployment.query.filter_by(app_id=app_id).order_by(Deployment.id.desc()).all()
+    deployments = (
+        Deployment.query.filter_by(app_id=app_id).join(Build).order_by(Deployment.id.desc()).all()
+    )
     return jsonify(
         [
             {
@@ -198,6 +200,12 @@ def get_all_deployments(app_id: str):
                 "build_id": deployment.build_id,
                 "channel_name": deployment.channel_name,
                 "created_at": deployment.created_at.isoformat(),
+                "artifact_type": deployment.build.artifact_type,
+                "artifact_url": deployment.build.artifact_url,
+                "snapshot_id": deployment.build.snapshot_id,
+                "commit_sha": deployment.build.commit_sha,
+                "commit_message": deployment.build.commit_message,
+                "commit_ref": deployment.build.commit_ref,
             }
             for deployment in deployments
         ]
@@ -287,7 +295,7 @@ def check_device(app_id: str):
             "compatible": true,                // False if device.build matches update's build ID or no update
             "partial": false,                  // Not relevant to differential live updates; keep false
             "snapshot": "e5583cc3-038e-44ca-a3ae-dfe0620b3610",  // Snapshot ID for new update; null if none
-            "url": "{BASE_URL}/apps/abcd1234/snapshots/{SNAPSHOT_ID}/manifest_v2",  // URL for manifest_v2 endpoint
+            "url": "{BASE_URL}/apps/abcd1234/snapshots/{SNAPSHOT_ID}/manifest_v2",  // manifest_v2 or download endpoint
             "build": 10131410,                 // New bundle's build ID; null if none
             "incompatibleUpdateAvailable": false  // Not relevant in current implementation; keep false
         },
@@ -325,9 +333,16 @@ def check_device(app_id: str):
     build = Build.query.filter_by(id=deployment.build_id).first()
     if not build:
         return jsonify({"error": "Build not found"}), 404
-    
+
     if build.artifact_type != artifact_type:
-        return jsonify({"error": "Build artifact type does not match deployment artifact type"}), 400
+        return (
+            jsonify(
+                {
+                    "error": f"Build is a {build.artifact_type}, but the SDK is requesting a {artifact_type}"
+                }
+            ),
+            400,
+        )
 
     update_available = build.snapshot_id != existing_snapshot_id and build.id != existing_build_id
     endpoint = "manifest_v2" if build.artifact_type == "differential" else "download"
