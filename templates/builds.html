@@ -36,40 +36,40 @@
 
 <div class="modal fade" id="newBuildModal" tabindex="-1" aria-labelledby="newBuildModalLabel" aria-hidden="true">
   <div class="modal-dialog">
-    <div class="modal-content">
+    <div class="modal-content border-0 rounded-4 shadow-sm">
       <form method="post">
-        <div class="modal-header">
-          <h5 class="modal-title" id="newBuildModalLabel">Create New Build</h5>
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title fw-bold" id="newBuildModalLabel">Create New Build</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <div class="modal-body">
-          <div class="mb-3">
-            <label for="artifactUrl" class="form-label">Artifact URL</label>
+        <div class="modal-body pt-2 pb-4">
+          <div class="form-floating mb-3">
             <input type="text" name="artifact_url" id="artifactUrl" class="form-control" placeholder="Artifact URL" required>
+            <label for="artifactUrl">Artifact URL</label>
           </div>
-          <div class="mb-3">
-            <label for="artifactType" class="form-label">Artifact Type</label>
+          <div class="form-floating mb-3">
             <select name="artifact_type" id="artifactType" class="form-select" required>
               <option value="differential">differential</option>
               <option value="zip">zip</option>
             </select>
+            <label for="artifactType">Artifact Type</label>
           </div>
-          <div class="mb-3">
-            <label for="commitSha" class="form-label">Commit SHA</label>
+          <div class="form-floating mb-3">
             <input type="text" name="commit_sha" id="commitSha" class="form-control" placeholder="Commit SHA" required>
+            <label for="commitSha">Commit SHA</label>
           </div>
-          <div class="mb-3">
-            <label for="commitMessage" class="form-label">Commit Message</label>
+          <div class="form-floating mb-3">
             <input type="text" name="commit_message" id="commitMessage" class="form-control" placeholder="Commit Message" required>
+            <label for="commitMessage">Commit Message</label>
           </div>
-          <div class="mb-3">
-            <label for="commitRef" class="form-label">Commit Ref</label>
+          <div class="form-floating mb-3">
             <input type="text" name="commit_ref" id="commitRef" class="form-control" placeholder="Commit Ref" required>
+            <label for="commitRef">Commit Ref</label>
           </div>
         </div>
-        <div class="modal-footer">
+        <div class="modal-footer border-0 pt-0">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary">Create Build</button>
+          <button type="submit" class="btn btn-primary px-4">Create Build</button>
         </div>
       </form>
     </div>
