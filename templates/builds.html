@@ -9,26 +9,30 @@
     </ol>
 </nav>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2 class="mb-0">Builds for App: {{ app.name }} ({{ app.id }})</h2>
-    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#newBuildModal">New Build</button>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">Builds for {{ app.name }}</h2>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newBuildModal">New build</button>
 </div>
 
-<table class="table table-bordered">
-    <thead><tr><th>ID</th><th>Artifact URL</th><th>Type</th><th>Commit SHA</th><th>Commit Message</th><th>Commit Ref</th></tr></thead>
-    <tbody>
+<div class="list-group list-group-flush">
     {% for build in builds %}
-    <tr>
-        <td>{{ build.id }}</td>
-        <td><a href="{{ build.artifact_url }}" target="_blank">{{ build.artifact_url }}</a></td>
-        <td>{{ build.artifact_type }}</td>
-        <td>{{ build.commit_sha }}</td>
-        <td>{{ build.commit_message }}</td>
-        <td>{{ build.commit_ref }}</td>
-    </tr>
+    <div class="list-group-item d-flex align-items-center py-3 px-0 border-0 border-bottom">
+        <div class="flex-grow-1">
+            <div class="fw-semibold" style="font-size:1.08rem;">
+              {{ build.commit_message if build.commit_message else "No commit message" }}
+            </div>
+            <div class="text-muted small">
+                <span class="badge bg-light text-dark border me-1">{{ build.artifact_type }}</span>
+                <span class="me-2">SHA: <span class="text-monospace">{{ build.commit_sha[0:6] }}</span></span>
+                <a href="{{ build.artifact_url }}" target="_blank" class="text-decoration-underline">artifact</a>
+            </div>
+        </div>
+        <div class="me-2">
+            <span class="text-muted small">#{{ build.id }}</span>
+        </div>
+    </div>
     {% endfor %}
-    </tbody>
-</table>
+</div>
 
 <div class="modal fade" id="newBuildModal" tabindex="-1" aria-labelledby="newBuildModalLabel" aria-hidden="true">
   <div class="modal-dialog">
@@ -65,7 +69,7 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-success">Create Build</button>
+          <button type="submit" class="btn btn-primary">Create Build</button>
         </div>
       </form>
     </div>
