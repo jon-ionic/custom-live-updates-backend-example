@@ -1,10 +1,11 @@
-from flask import Blueprint, request, jsonify, redirect, g
+from flask import Blueprint, request, jsonify, redirect, g, jsonify
 from models import db, App, Build, Deployment, Token, User
 import uuid
 import os
 import logging
 from typing import Tuple, Any, Dict, Optional
 from functools import wraps
+from utils import validate_required_fields, token_required, validate_build_artifact
 
 api = Blueprint("api", __name__)
 
@@ -12,34 +13,6 @@ BASE_URL = os.getenv("LIVE_UPDATES_BASE_URL", "http://localhost:8000")
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-
-def token_required(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        auth = request.headers.get("Authorization", "")
-        if not auth.startswith("Bearer "):
-            return jsonify({"error": "Missing or invalid Authorization header"}), 401
-        token_str = auth.split(" ", 1)[1]
-        token = Token.query.filter_by(token=token_str).first()
-        if not token:
-            return jsonify({"error": "Invalid or expired token"}), 401
-        g.current_user = token.user
-        return f(*args, **kwargs)
-
-    return decorated
-
-
-def validate_required_fields(
-    data: Dict[str, Any], required_fields: list[str]
-) -> Tuple[bool, Optional[str], Optional[int]]:
-    if not data or not all(field in data for field in required_fields):
-        return (
-            False,
-            jsonify({"error": f'Missing required fields: {", ".join(required_fields)}'}),
-            400,
-        )
-    return True, None, None
 
 
 # ------------------------
@@ -120,14 +93,11 @@ def create_build(app_id: str):
     if not validated:
         return response, error_code
     artifact_type, artifact_url = data["artifact_type"], data["artifact_url"]
-    if artifact_type not in ["differential", "zip"]:
-        return jsonify({"error": 'artifact_type must be "differential" or "zip"'}), 400
-    if artifact_type == "differential" and not artifact_url.endswith("live-update-manifest.json"):
-        return jsonify({"error": "artifact_url must be a live-update-manifest.json file"}), 400
-    if artifact_type == "zip" and not artifact_url.endswith(".zip"):
-        return jsonify({"error": "artifact_url must be a .zip file"}), 400
-    if not App.query.get(app_id):
-        return jsonify({"error": "App not found"}), 404
+
+    validated, error = validate_build_artifact(artifact_type, artifact_url)
+    if not validated:
+        return jsonify(error), 400
+
     try:
         new_build = Build(
             app_id=app_id,

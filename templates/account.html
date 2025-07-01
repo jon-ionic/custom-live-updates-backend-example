@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row justify-content-center mt-5">
+  <div class="col-md-5">
+    <div class="card shadow-sm border-0">
+      <div class="card-body p-4">
+        <h3 class="mb-4 text-center">Account Settings</h3>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+        <form method="post">
+          <div class="form-floating mb-3">
+            <input type="password" class="form-control" id="current_password" name="current_password" placeholder="Current Password" required>
+            <label for="current_password">Current Password</label>
+          </div>
+          <div class="form-floating mb-3">
+            <input type="password" class="form-control" id="new_password" name="new_password" placeholder="New Password" required>
+            <label for="new_password">New Password</label>
+          </div>
+          <div class="form-floating mb-3">
+            <input type="password" class="form-control" id="confirm_password" name="confirm_password" placeholder="Confirm New Password" required>
+            <label for="confirm_password">Confirm New Password</label>
+          </div>
+          <button type="submit" class="btn btn-primary w-100">Change Password</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} 

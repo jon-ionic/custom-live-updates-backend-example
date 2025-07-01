@@ -42,6 +42,16 @@
           <h5 class="modal-title fw-bold" id="newBuildModalLabel">Create New Build</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
         <div class="modal-body pt-2 pb-4">
           <div class="form-floating mb-3">
             <input type="text" name="artifact_url" id="artifactUrl" class="form-control" placeholder="Artifact URL" required>

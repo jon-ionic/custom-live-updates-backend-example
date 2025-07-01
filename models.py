@@ -33,7 +33,9 @@ class App(db.Model):
 
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     name = db.Column(db.String(255), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
 
+    user = db.relationship("User", backref="apps")
     builds = db.relationship("Build", backref="app", lazy=True)
     deployments = db.relationship("Deployment", backref="app", lazy=True)
 

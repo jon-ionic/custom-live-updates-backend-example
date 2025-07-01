@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, sessio
 from models import db, App, Build, Deployment, User, Token
 import uuid
 from functools import wraps
+from utils import validate_build_artifact
 
 ui = Blueprint("ui", __name__)
 
@@ -9,11 +10,21 @@ ui = Blueprint("ui", __name__)
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not session.get("user_id"):
+        user_id = session.get("user_id")
+        if not user_id:
+            return redirect(url_for("ui.login"))
+        user = User.query.get(user_id)
+        if not user:
+            session.clear()
             return redirect(url_for("ui.login"))
         return f(*args, **kwargs)
-
     return decorated_function
+
+
+@login_required
+@ui.route("/")
+def index():
+    return redirect(url_for("ui.ui_apps"))
 
 
 @ui.route("/register", methods=["GET", "POST"])
@@ -74,24 +85,26 @@ def tokens():
 @ui.route("/ui/apps", methods=["GET", "POST"])
 @login_required
 def ui_apps():
+    user = User.query.get(session["user_id"])
     if request.method == "POST":
         name = request.form.get("name")
         app_id = request.form.get("id")
         if name and app_id:
             if not App.query.get(app_id):
-                new_app = App(id=app_id, name=name)
+                new_app = App(id=app_id, name=name, user_id=user.id)
                 db.session.add(new_app)
                 db.session.commit()
         return redirect("/ui/apps")
-    apps = App.query.all()
+    apps = App.query.filter_by(user_id=user.id).all()
     return render_template("apps.html", apps=apps)
 
 
 @ui.route("/ui/apps/<app_id>", methods=["GET", "POST"])
 @login_required
 def ui_app(app_id):
+    user = User.query.get(session["user_id"])
     app_obj = App.query.get(app_id)
-    if not app_obj:
+    if not app_obj or app_obj.user_id != user.id:
         return redirect("/ui/apps")
     if request.method == "POST":
         artifact_url = request.form.get("artifact_url")
@@ -126,16 +139,24 @@ def ui_app(app_id):
 @ui.route("/ui/apps/<app_id>/builds", methods=["GET", "POST"])
 @login_required
 def ui_builds(app_id):
+    user = User.query.get(session["user_id"])
     app_obj = App.query.get(app_id)
-    if not app_obj:
+    if not app_obj or app_obj.user_id != user.id:
         return redirect("/ui/apps")
+    
     if request.method == "POST":
         artifact_url = request.form.get("artifact_url")
         artifact_type = request.form.get("artifact_type")
         commit_sha = request.form.get("commit_sha")
         commit_message = request.form.get("commit_message")
         commit_ref = request.form.get("commit_ref")
+        
         if all([artifact_url, artifact_type, commit_sha, commit_message, commit_ref]):
+            validated, error = validate_build_artifact(artifact_type, artifact_url)
+            if not validated:
+                flash(error["error"], "danger")
+                return
+            
             new_build = Build(
                 app_id=app_id,
                 artifact_url=artifact_url,
@@ -155,8 +176,9 @@ def ui_builds(app_id):
 @ui.route("/ui/apps/<app_id>/deployments", methods=["GET", "POST"])
 @login_required
 def ui_deployments(app_id):
+    user = User.query.get(session["user_id"])
     app_obj = App.query.get(app_id)
-    if not app_obj:
+    if not app_obj or app_obj.user_id != user.id:
         return redirect("/ui/apps")
     builds = Build.query.filter_by(app_id=app_id).order_by(Build.id.desc()).all()
     if request.method == "POST":
@@ -171,3 +193,25 @@ def ui_deployments(app_id):
         Deployment.query.filter_by(app_id=app_id).order_by(Deployment.id.desc()).join(Build).all()
     )
     return render_template("deployments.html", app=app_obj, builds=builds, deployments=deployments)
+
+
+@ui.route("/account", methods=["GET", "POST"])
+@login_required
+def account():
+    user = User.query.get(session["user_id"])
+    if request.method == "POST":
+        current_password = request.form.get("current_password")
+        new_password = request.form.get("new_password")
+        confirm_password = request.form.get("confirm_password")
+        if not user.check_password(current_password):
+            flash("Current password is incorrect.", "danger")
+        elif not new_password or len(new_password) < 6:
+            flash("New password must be at least 6 characters.", "danger")
+        elif new_password != confirm_password:
+            flash("New passwords do not match.", "danger")
+        else:
+            user.set_password(new_password)
+            db.session.commit()
+            flash("Password updated successfully!", "success")
+            return redirect(url_for("ui.account"))
+    return render_template("account.html")
