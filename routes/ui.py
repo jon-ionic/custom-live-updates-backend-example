@@ -1,11 +1,78 @@
-from flask import Blueprint, render_template, request, redirect
-from models import db, App, Build, Deployment
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash
+from models import db, App, Build, Deployment, User, Token
 import uuid
+from functools import wraps
 
 ui = Blueprint("ui", __name__)
 
 
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get("user_id"):
+            return redirect(url_for("ui.login"))
+        return f(*args, **kwargs)
+
+    return decorated_function
+
+
+@ui.route("/register", methods=["GET", "POST"])
+def register():
+    if request.method == "POST":
+        username = request.form.get("username")
+        password = request.form.get("password")
+        if not username or not password:
+            flash("Username and password required.", "danger")
+            return redirect(url_for("ui.register"))
+        if User.query.filter_by(username=username).first():
+            flash("Username already exists.", "danger")
+            return redirect(url_for("ui.register"))
+        user = User(username=username)
+        user.set_password(password)
+        db.session.add(user)
+        db.session.commit()
+        flash("Account created. Please log in.", "success")
+        return redirect(url_for("ui.login"))
+    return render_template("register.html")
+
+
+@ui.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        username = request.form.get("username")
+        password = request.form.get("password")
+        user = User.query.filter_by(username=username).first()
+        if user and user.check_password(password):
+            session["user_id"] = user.id
+            flash("Logged in successfully!", "success")
+            return redirect(url_for("ui.ui_apps"))
+        flash("Invalid username or password.", "danger")
+    return render_template("login.html")
+
+
+@ui.route("/logout")
+def logout():
+    session.pop("user_id", None)
+    flash("Logged out.", "info")
+    return redirect(url_for("ui.login"))
+
+
+@ui.route("/tokens", methods=["GET", "POST"])
+@login_required
+def tokens():
+    user = User.query.get(session["user_id"])
+    if request.method == "POST":
+        new_token = Token(user_id=user.id)
+        db.session.add(new_token)
+        db.session.commit()
+        flash("New token created!", "success")
+        return redirect(url_for("ui.tokens"))
+    tokens = Token.query.filter_by(user_id=user.id).order_by(Token.created_at.desc()).all()
+    return render_template("tokens.html", tokens=tokens)
+
+
 @ui.route("/ui/apps", methods=["GET", "POST"])
+@login_required
 def ui_apps():
     if request.method == "POST":
         name = request.form.get("name")
@@ -21,6 +88,7 @@ def ui_apps():
 
 
 @ui.route("/ui/apps/<app_id>", methods=["GET", "POST"])
+@login_required
 def ui_app(app_id):
     app_obj = App.query.get(app_id)
     if not app_obj:
@@ -56,6 +124,7 @@ def ui_app(app_id):
 
 
 @ui.route("/ui/apps/<app_id>/builds", methods=["GET", "POST"])
+@login_required
 def ui_builds(app_id):
     app_obj = App.query.get(app_id)
     if not app_obj:
@@ -84,6 +153,7 @@ def ui_builds(app_id):
 
 
 @ui.route("/ui/apps/<app_id>/deployments", methods=["GET", "POST"])
+@login_required
 def ui_deployments(app_id):
     app_obj = App.query.get(app_id)
     if not app_obj:

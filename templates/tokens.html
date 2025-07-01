@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row justify-content-center mt-5">
+  <div class="col-md-8">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h2 class="mb-0">API Tokens</h2>
+      <form method="post" class="d-inline">
+        <button type="submit" class="btn btn-primary">Create New Token</button>
+      </form>
+    </div>
+    <div class="list-group">
+      {% for token in tokens %}
+      <div class="list-group-item d-flex justify-content-between align-items-center">
+        <div>
+          <span class="fw-bold">{{ token.token }}</span>
+          <span class="text-muted small ms-2">Created: {{ token.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+        </div>
+      </div>
+      {% else %}
+      <div class="list-group-item text-muted">No tokens yet.</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %} 

@@ -1,9 +1,10 @@
-from flask import Blueprint, request, jsonify, redirect
-from models import db, App, Build, Deployment
+from flask import Blueprint, request, jsonify, redirect, g
+from models import db, App, Build, Deployment, Token, User
 import uuid
 import os
 import logging
 from typing import Tuple, Any, Dict, Optional
+from functools import wraps
 
 api = Blueprint("api", __name__)
 
@@ -11,6 +12,22 @@ BASE_URL = os.getenv("LIVE_UPDATES_BASE_URL", "http://localhost:8000")
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        auth = request.headers.get("Authorization", "")
+        if not auth.startswith("Bearer "):
+            return jsonify({"error": "Missing or invalid Authorization header"}), 401
+        token_str = auth.split(" ", 1)[1]
+        token = Token.query.filter_by(token=token_str).first()
+        if not token:
+            return jsonify({"error": "Invalid or expired token"}), 401
+        g.current_user = token.user
+        return f(*args, **kwargs)
+
+    return decorated
 
 
 def validate_required_fields(
@@ -31,12 +48,14 @@ def validate_required_fields(
 
 
 @api.route("/apps", methods=["GET"])
+@token_required
 def get_all_apps():
     apps = App.query.all()
     return jsonify([{"id": app.id, "name": app.name} for app in apps])
 
 
 @api.route("/apps", methods=["POST"])
+@token_required
 def create_app():
     data = request.get_json()
     logger.info(f"Creating new app with data: {data}")
@@ -63,6 +82,7 @@ def create_app():
 
 
 @api.route("/apps/<app_id>/builds", methods=["GET"])
+@token_required
 def get_all_builds(app_id: str):
     if not App.query.get(app_id):
         return jsonify({"error": "App not found"}), 404
@@ -85,6 +105,7 @@ def get_all_builds(app_id: str):
 
 
 @api.route("/apps/<app_id>/builds", methods=["POST"])
+@token_required
 def create_build(app_id: str):
     data = request.get_json()
     logger.info(f"Creating new build for app {app_id} with data: {data}")
@@ -147,6 +168,7 @@ def create_build(app_id: str):
 
 
 @api.route("/apps/<app_id>/deployments", methods=["GET"])
+@token_required
 def get_all_deployments(app_id: str):
     if not App.query.get(app_id):
         return jsonify({"error": "App not found"}), 404
@@ -174,6 +196,7 @@ def get_all_deployments(app_id: str):
 
 
 @api.route("/apps/<app_id>/deployments", methods=["POST"])
+@token_required
 def create_deployment(app_id: str):
     data = request.get_json()
     logger.info(f"Creating new deployment for app {app_id} with data: {data}")

@@ -1,8 +1,31 @@
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 import uuid
+from werkzeug.security import generate_password_hash, check_password_hash
 
 db = SQLAlchemy()
+
+
+class User(db.Model):
+    __tablename__ = "users"
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    password_hash = db.Column(db.String(128), nullable=False)
+    tokens = db.relationship("Token", backref="user", lazy=True)
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password, method="pbkdf2:sha256")
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
+
+class Token(db.Model):
+    __tablename__ = "tokens"
+    id = db.Column(db.Integer, primary_key=True)
+    token = db.Column(db.String(64), unique=True, nullable=False, default=lambda: uuid.uuid4().hex)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
 
 class App(db.Model):
@@ -26,6 +49,7 @@ class Build(db.Model):
     commit_sha = db.Column(db.String(40), nullable=False)
     commit_message = db.Column(db.Text, nullable=False)
     commit_ref = db.Column(db.String(255), nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     deployments = db.relationship("Deployment", backref="build", lazy=True)
 
