@@ -150,24 +150,24 @@ def ui_builds(app_id):
         commit_sha = request.form.get("commit_sha")
         commit_message = request.form.get("commit_message")
         commit_ref = request.form.get("commit_ref")
-        
+
         if all([artifact_url, artifact_type, commit_sha, commit_message, commit_ref]):
             validated, error = validate_build_artifact(artifact_type, artifact_url)
             if not validated:
                 flash(error["error"], "danger")
-                return
             
-            new_build = Build(
-                app_id=app_id,
-                artifact_url=artifact_url,
-                artifact_type=artifact_type,
-                snapshot_id=str(uuid.uuid4()),
-                commit_sha=commit_sha,
-                commit_message=commit_message,
-                commit_ref=commit_ref,
-            )
-            db.session.add(new_build)
-            db.session.commit()
+            else:
+                new_build = Build(
+                    app_id=app_id,
+                    artifact_url=artifact_url,
+                    artifact_type=artifact_type,
+                    snapshot_id=str(uuid.uuid4()),
+                    commit_sha=commit_sha,
+                    commit_message=commit_message,
+                    commit_ref=commit_ref,
+                )
+                db.session.add(new_build)
+                db.session.commit()
         return redirect(f"/ui/apps/{app_id}/builds")
     builds = Build.query.filter_by(app_id=app_id).order_by(Build.id.desc()).all()
     return render_template("builds.html", app=app_obj, builds=builds)

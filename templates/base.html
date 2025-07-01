@@ -14,7 +14,6 @@
                 {% if session.user_id %}
                     <a href="/tokens" class="btn btn-outline-primary me-2">API Tokens</a>
                     <a href="/account" class="btn btn-outline-secondary me-2">Account</a>
-                    <span class="me-2 text-muted">User #{{ session.user_id }}</span>
                     <a href="/logout" class="btn btn-outline-secondary">Logout</a>
                 {% else %}
                     <a href="/login" class="btn btn-outline-primary me-2">Login</a>
@@ -28,5 +27,17 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+    <script>
+      window.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+          document.querySelectorAll('.alert').forEach(function(alert) {
+            if (alert.classList.contains('show')) {
+              var bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
+              bsAlert.close();
+            }
+          });
+        }, 5000);
+      });
+    </script>
 </body>
 </html> 
