@@ -55,7 +55,6 @@ def login():
         user = User.query.filter_by(username=username).first()
         if user and user.check_password(password):
             session["user_id"] = user.id
-            flash("Logged in successfully!", "success")
             return redirect(url_for("ui.ui_apps"))
         flash("Invalid username or password.", "danger")
     return render_template("login.html")
@@ -76,7 +75,6 @@ def tokens():
         new_token = Token(user_id=user.id)
         db.session.add(new_token)
         db.session.commit()
-        flash("New token created!", "success")
         return redirect(url_for("ui.tokens"))
     tokens = Token.query.filter_by(user_id=user.id).order_by(Token.created_at.desc()).all()
     return render_template("tokens.html", tokens=tokens)
