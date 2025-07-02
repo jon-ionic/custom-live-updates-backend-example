@@ -15,6 +15,9 @@
           <span class="fw-bold">{{ token.token }}</span>
           <span class="text-muted small ms-2">Created: {{ token.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</span>
         </div>
+        <form method="post" action="{{ url_for('ui.delete_token', token_id=token.id) }}" class="d-inline ms-2" onsubmit="return confirm('Delete this token?');">
+          <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+        </form>
       </div>
       {% else %}
       <div class="list-group-item text-muted">No tokens yet.</div>

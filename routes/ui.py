@@ -63,7 +63,6 @@ def login():
 @ui.route("/logout")
 def logout():
     session.pop("user_id", None)
-    flash("Logged out.", "info")
     return redirect(url_for("ui.login"))
 
 
@@ -78,6 +77,17 @@ def tokens():
         return redirect(url_for("ui.tokens"))
     tokens = Token.query.filter_by(user_id=user.id).order_by(Token.created_at.desc()).all()
     return render_template("tokens.html", tokens=tokens)
+
+
+@ui.route("/tokens/delete/<int:token_id>", methods=["POST"])
+@login_required
+def delete_token(token_id):
+    user = User.query.get(session["user_id"])
+    token = Token.query.get(token_id)
+    if token and token.user_id == user.id:
+        db.session.delete(token)
+        db.session.commit()
+    return redirect(url_for("ui.tokens"))
 
 
 @ui.route("/ui/apps", methods=["GET", "POST"])
