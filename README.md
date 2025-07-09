@@ -1,6 +1,10 @@
 # Bring your own Appflow
 This is a bare-minimum implementation of a custom backend for the Live Updates SDK, using Flask and SQLite. It includes the two endpoints required by the SDK (`check-device` and `manifest-v2`) as well as supporting endpoints for creating and viewing apps, builds, and deployments.
 
+## Pipeline Examples
+
+See [pipeline_examples](./pipeline_examples) for demo build workflows.
+
 ## Usage
 
 ### Setup
