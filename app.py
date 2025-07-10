@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, redirect
+from flask import Flask, request, jsonify, redirect, Response
 from models import db, App, Build, Deployment
 import os
 import uuid
@@ -22,7 +22,7 @@ with app.app_context():
 
 def validate_required_fields(
     data: Dict[str, Any], required_fields: list[str]
-) -> Tuple[bool, Optional[str], Optional[int]]:
+) -> Tuple[bool, Optional[Response], Optional[int]]:
     if not data or not all(field in data for field in required_fields):
         return (
             False,

@@ -5,7 +5,7 @@ import uuid
 db = SQLAlchemy()
 
 
-class App(db.Model):
+class App(db.Model): # type: ignore
     __tablename__ = "apps"
 
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
@@ -15,7 +15,7 @@ class App(db.Model):
     deployments = db.relationship("Deployment", backref="app", lazy=True)
 
 
-class Build(db.Model):
+class Build(db.Model): # type: ignore
     __tablename__ = "builds"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -30,7 +30,7 @@ class Build(db.Model):
     deployments = db.relationship("Deployment", backref="build", lazy=True)
 
 
-class Deployment(db.Model):
+class Deployment(db.Model): # type: ignore
     __tablename__ = "deployments"
 
     id = db.Column(db.Integer, primary_key=True)
